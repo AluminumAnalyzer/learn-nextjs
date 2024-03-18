@@ -1,0 +1,420 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") 
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // 1:n relation to User on Role
+  members User[] @relation("UserRole")
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String
+  description String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // 1:n relation to Users on Department
+  members User[] @relation("UserDepartment")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  isActive  Boolean  @default(false)
+  
+  
+  // 1:n relation to Role on User
+  roleId String
+  role Role @relation(fields: [roleId], references: [id],name: "UserRole")
+  
+  // 1:n relation to Department on User
+  departmentId String
+  department Department @relation(fields: [departmentId], references: [id], name: "UserDepartment")
+  
+  orders Order[] @relation("OrderWithUser")
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  
+  title     String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  orderStatus String
+  orderPriority String
+  
+  orderDistributionDate  DateTime
+  orderDueDate DateTime
+  
+  totalTaskStartDate DateTime
+  totalTaskEndDate DateTime
+ 
+  // 1:n relation to User on Task
+  orderManagerId String 
+  orderManager User @relation("OrderWithUser")
+  
+  // 1:n relation to Company on Order
+  companyId String
+  company Company @relation(fields: [companyId], references: [id], name: "OrderWithCompany")
+  
+  // 1:n relation to orderType on Order
+  orderTypeId String
+  orderType orderType @relation(fields: [orderTypeId], references: [id], name: "OrderWithOrderType")  
+  
+  
+  tasks Task[] @relation("OrderWithTask")
+  orderDetails orderDetail[] @relation("OrderWithOrderDetail")
+  
+  
+}
+
+model orderType {
+  id        String   @id @default(uuid())
+  name      String
+  description String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // 1:n relation to Order on orderType
+  orders Order[] @relation("OrderWithOrderType")
+}
+
+model orderDetail {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  orderDetailName String
+  orderDetailDescription String
+  
+  // 1:n relation to Order on orderDetail
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], name: "OrderWithOrderDetail")
+}
+
+
+model Resource {
+  id        String   @id @default(uuid())
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  description String
+  
+  // 1:n relation to ResourceColor on Resource
+  colorId String
+  color ResourceColor @relation(fields: [colorId], references: [id], name: "ResourceColor")
+  
+  // 1:n relation to BaseResource on Resource
+  baseResourceId String
+  baseResource BaseResource @relation(fields: [baseResourceId], references: [id], name: "ResourceOnBaseResource")
+ 
+  
+  resourceSpecifications ResourceSpecification[] @relation( references: [id], name: "ResourceSpecification")
+  
+}
+
+model ResourceSpecificationOnResource {
+  // model for m:n relation between Resource and ResourceSpecification
+  
+  @@id([resourceId, resourceSpecificationId])
+  assignedAt DateTime @default(now())
+  assignedBy String
+
+  // m:n relation to Resource on ResourceSpecificationOnResource
+  resourceId String
+  resource Resource @relation(fields: [resourceId], references: [id], name: "ResourceSpecification")
+  
+  // m:n relation to ResourceSpecification on ResourceSpecificationOnResource
+  resourceSpecificationId String
+  resourceSpecification ResourceSpecification @relation(fields: [resourceSpecificationId], references: [id], name: "ResourceSpecification")
+}
+
+ 
+model ResourceSpecification {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  unit    String
+  value   Float
+  description String 
+  
+  // 1:n relation to Resource on ResourceSpecification
+  resources Resource[] @relation("ResourceSpecification")
+  
+}
+
+model BaseResource {
+  id        String   @id @default(uuid())
+  code      String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  description String
+  
+  // 1:n relation to Resource on BaseResource
+  resource Resource[] @relation("ResourceOnBaseResource")
+  
+  // m:n relation to ResourceType on BaseResource
+  types ResourceType[] @relation("BaseResourceOnMain")
+  
+}
+
+model ResourceType {
+  id        String   @id @default(uuid())
+  name      String
+  countType String
+  description String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // m:n relation to BaseResource on ResourceType
+  resources BaseResourceOnResourceType[] @relation("ResourceTypeOnMain")
+}
+
+model BaseResourceOnResourceType {
+  // model for m:n relation between ResourceType and BaseResource
+  
+  @@id ([baseResourceId, resourceTypeId])
+  
+  assignedAt DateTime @default(now())
+  assignedBy String
+  
+  // m:n relation to BaseResource on BaseResourceOnResourceType
+  baseResourceId String
+  baseResource BaseResource @relation(fields: [baseResourceId], references: [id], name: "BaseResourceOnMain")
+  
+  // m:n relation to ResourceType on BaseResourceOnResourceType
+  resourceTypeId String
+  resourceType ResourceType @relation(fields: [resourceTypeId], references: [id], name: "ResourceTypeOnMain")
+}
+
+model ResourceColor {
+  id        String   @id @default(uuid())
+  
+  name      String
+  colorCode String
+  ImageUrl  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  // 1:n relation to Resource on ResourceColor
+  resources Resource[] @relation("ResourceColor") 
+}
+
+
+
+model Task {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  title     String
+  completed Boolean  @default(false)
+  
+  taskName String
+  taskDescription String
+  
+  taskStatus String
+  taskPriority String
+  
+  taskDistributionDate  DateTime
+  taskDueDate DateTime
+  
+  taskStartDate DateTime
+  taskEndDate DateTime
+  
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], name: "OrderWithTask")
+  
+  // 1:n relation to TaskElement on Task
+  
+}
+
+model Operation {
+  // 자재와 작업 간의 관계
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  code        String? 
+  name        String
+  description String?
+  image       String?
+  count       Int?
+  
+  taskId String
+  task Task @relation(fields: [taskId], references: [id], name: "TaskElementTask")
+  
+  operationOnTaskElement TaskElementWithOperation[] @relation("TaskElementOperations")
+  operationsSpecification OperationSpecification[] @relation("TaskElementOperationsSpecification")
+  parts     Part[] @relation("TaskElementParts")
+  
+
+}
+
+
+model TaskElementWithOperation {
+  // model for m:n relation between TaskElement and Operation
+  taskElementId String
+  taskElement TaskElement @relation(fields: [taskElementId], references: [id], name: "TaskElementOperations")
+}
+
+
+model Part {
+  // 자재와 작업 간의 관계
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  code        String? 
+  name        String
+  description String?
+  image       String?
+  count       Int?
+  
+  // m:n relation to BaseResource on TaskPart
+  inputPart Part[] @relation("SelfPart")
+  outputPart Part[] @relation("SelfPart")
+}
+
+
+model Operation {
+  // 작업을 위한 모델
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  name      String
+  description String
+  
+  
+  taskElements TaskElement[] @relation("TaskElementOperations")
+  // 1:n relation to Machine on Operation
+  machineId String
+  machine Machine @relation(fields: [machineId], references: [id], name: "OperationOnMachine")
+}
+
+
+model OperationSpecification {
+  id       String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  unit    String
+  value   Float
+  description String 
+  image   String?
+  
+  // 1:n relation to TaskElement on OperationSpecification
+  taskElementId String
+  taskElement TaskElement @relation(fields: [taskElementId], references: [id], name: "TaskElementOperationsSpecification")
+}
+
+model Machine {
+  // 기계를 위한 모델
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  name      String
+  description String
+  image     String?
+  location  String
+  capacity  Int
+  status    String
+  
+  // 1:n relation to Operation on Machine
+  operations Operation[] @relation("OperationOnMachine")
+}
+
+
+
+model BaseResourceOnTaskPart {
+  // model for m:n relation between BaseResource and TaskPart
+  
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // m:n relation to BaseResource on BaseResourceOnTaskPart
+  baseResourceId String
+  baseResource BaseResource @relation(fields: [baseResourceId], references: [id], name: "BaseResourceOnTaskPart")
+}
+
+model ScaffoldForTask {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  title     String
+  completed Boolean  @default(false)
+  
+  taskName String
+  taskDescription String
+  
+  resource  Resource[] 
+  
+  formula   String
+  
+  // self relation to ScaffoldForTask
+  parentTaskId String?
+  parentTask ScaffoldForTask? @relation("SelfRelationScaffoldForTasks", fields: [parentTaskId], references: [id])
+  subTasks ScaffoldForTask[] @relation("SelfRelationScaffoldForTasks")
+    
+}
+
+model StorageResource {
+  // 자재 저장 및 재처리을 위한 모델
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  name              String
+  
+  description       String
+  
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  name      String
+  description String
+  location  String
+  image     String?
+  
+  // 1:n relation to Order on Company
+  orders Order[] @relation("OrderWithCompany")
+}
+
