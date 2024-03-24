@@ -2,13 +2,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import styles from '../styles/navigation.module.css';
 
 const MainNavigation = () => {
   const pathname = usePathname();
   console.log(pathname);
   return (
-    <nav>
-      <ul className="flex flex-row">
+    <nav className={styles.nav}>
+      <ul className={styles.list}>
         <li>
           <Link href="/">{pathname === '/' ? 'Home🔥' : 'Home'}</Link>
         </li>

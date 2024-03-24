@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import MainNavigation from '../components/navigation';
 import '../styles/Home.module.css';
+import '../styles/global.css';
 
 export const metadata: Metadata = {
   title: {

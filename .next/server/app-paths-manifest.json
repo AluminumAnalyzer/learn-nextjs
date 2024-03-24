@@ -1,3 +1,5 @@
 {
-  "/(movies)/movies/[id]/page": "app/(movies)/movies/[id]/page.js"
+  "/(movies)/movies/[id]/page": "app/(movies)/movies/[id]/page.js",
+  "/(Home)/page": "app/(Home)/page.js",
+  "/about-us/page": "app/about-us/page.js"
 }
